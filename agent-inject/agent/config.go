@@ -85,7 +85,16 @@ type Listener struct {
 
 // Cache defines the configuration for the Vault Agent Cache
 type Cache struct {
-	UseAuthAuthToken string `json:"use_auto_auth_token"`
+	UseAuthAuthToken string        `json:"use_auto_auth_token"`
+	Persist          *CachePersist `json:"persist"`
+}
+
+type CachePersist struct {
+	Type               string `json:"type"`
+	Path               string `json:"path"`
+	KeepAfterImport    bool   `json:"keep_after_import"`
+	ExitOnErr          bool   `json:"exit_on_err"`
+	ServiceAccountPath string `json:"service_account_path"`
 }
 
 func (a *Agent) newTemplateConfigs() []*Template {
@@ -147,7 +156,7 @@ func (a *Agent) newConfig(init bool) ([]byte, error) {
 		Templates: a.newTemplateConfigs(),
 	}
 
-	if a.VaultAgentCache.Enable && !init {
+	if a.VaultAgentCache.Enable {
 		config.Listener = []*Listener{
 			{
 				Type:       "tcp",
@@ -157,6 +166,10 @@ func (a *Agent) newConfig(init bool) ([]byte, error) {
 		}
 		config.Cache = &Cache{
 			UseAuthAuthToken: a.VaultAgentCache.UseAutoAuthToken,
+			Persist: &CachePersist{
+				Type: "kubernetes",
+				Path: "/vault/secrets",
+			},
 		}
 	}
 
